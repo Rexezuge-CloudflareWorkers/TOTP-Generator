@@ -51,6 +51,20 @@
             font-size: 20px;
             margin-left: 10px;
         }
+
+        .docs-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .docs-link a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        .docs-link a:hover {
+            text-decoration: underline;
+        }
     </style>
     <script>
         function generateRandomKey() {
@@ -140,6 +154,11 @@
             <div class="progress" id="progress"></div>
         </div>
         <p>Time Left: <span id="remaining">30</span> sec</p>
+    </div>
+
+    <!-- 添加去往 /docs OpenAPI 文档的链接和描述 -->
+    <div class="docs-link">
+        <p>For more details on the API, please visit the <a href="/docs" target="_blank">OpenAPI documentation</a>.</p>
     </div>
 </body>
 
