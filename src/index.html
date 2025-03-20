@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOTP Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress {
+            height: 100%;
+            background: #4CAF50;
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 20px;
+            margin-left: 10px;
+        }
+    </style>
+    <script>
+        function generateRandomKey() {
+            const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; // Base32 字符集
+            let key = "";
+            for (let i = 0; i < 16; i++) { // 16 字符长度
+                key += charset[Math.floor(Math.random() * charset.length)];
+            }
+            return key;
+        }
+
+        window.onload = function () {
+            document.getElementById('key').value = generateRandomKey();
+            generateOTP();
+        };
+
+        let updateTimeout;
+
+        function onInputChange() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(generateOTP, 500);
+        }
+
+        async function generateOTP() {
+            const key = document.getElementById('key').value;
+            const digits = parseInt(document.getElementById('digits').value, 10);
+            const period = parseInt(document.getElementById('period').value, 10);
+
+            if (!key) {
+                alert("Please enter a valid TOTP key.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}`);
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                document.getElementById('otp').innerText = data.otp;
+                updateProgressBar(data.remaining, period);
+            } catch (error) {
+                console.error("Error fetching OTP:", error);
+                alert("Failed to fetch OTP. Please check backend service.");
+            }
+        }
+
+        function updateProgressBar(remaining, period) {
+            document.getElementById('remaining').innerText = remaining;
+            const progressBar = document.getElementById('progress');
+            progressBar.style.width = (remaining / period * 100) + '%';
+
+            if (remaining > 0) {
+                setTimeout(() => updateProgressBar(remaining - 1, period), 1000);
+            } else {
+                generateOTP();
+            }
+        }
+
+        function copyToClipboard() {
+            const otpText = document.getElementById('otp').innerText;
+            navigator.clipboard.writeText(otpText).then(() => {
+                const copyBtn = document.getElementById('copy-btn');
+                copyBtn.innerHTML = '✔';
+                setTimeout(() => copyBtn.innerHTML = '📋', 2000);
+            }).catch(err => {
+                console.error("Failed to copy OTP:", err);
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h2>TOTP Generator</h2>
+        <label>Secret Key:</label>
+        <input type="text" id="key" value="" placeholder="Enter TOTP Key" oninput="onInputChange()"><br>
+        <label>Digits:</label>
+        <input type="number" id="digits" value="6" oninput="onInputChange()"><br>
+        <label>Period (seconds):</label>
+        <input type="number" id="period" value="30" oninput="onInputChange()"><br>
+        <h3>OTP: <span id="otp">----</span> <button class="copy-btn" id="copy-btn"
+                onclick="copyToClipboard()">📋</button></h3>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <p>Time Left: <span id="remaining">30</span> sec</p>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,23 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "totp-generator",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-03-19",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"preview_urls": false,
+	"workers_dev": true,
+	"observability": {
+		"enabled": false,
+		"head_sampling_rate": 1
+	},
+	"routes": [],
+	"placement": {
+		"mode": "off"
+	}
+}
