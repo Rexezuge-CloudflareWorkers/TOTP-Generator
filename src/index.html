@@ -38,7 +38,8 @@
             transition: width 1s linear;
         }
 
-        input {
+        input,
+        select {
             width: 100%;
             padding: 8px;
             margin: 5px 0;
@@ -92,6 +93,7 @@
             const key = document.getElementById('key').value;
             const digits = parseInt(document.getElementById('digits').value, 10);
             const period = parseInt(document.getElementById('period').value, 10);
+            const algorithm = document.getElementById('algorithm').value;
 
             if (!key) {
                 alert("Please enter a valid TOTP key.");
@@ -99,7 +101,9 @@
             }
 
             try {
-                const response = await fetch(`/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}`);
+                const response = await fetch(
+                    `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`
+                );
 
                 if (!response.ok) {
                     throw new Error(`Server error: ${response.statusText}`);
@@ -148,6 +152,12 @@
         <input type="number" id="digits" value="6" oninput="onInputChange()"><br>
         <label>Period (seconds):</label>
         <input type="number" id="period" value="30" oninput="onInputChange()"><br>
+        <label>Algorithm:</label>
+        <select id="algorithm" oninput="onInputChange()">
+            <option value="SHA-1">SHA-1</option>
+            <option value="SHA-256">SHA-256</option>
+            <option value="SHA-512">SHA-512</option>
+        </select><br>
         <h3>OTP: <span id="otp">----</span> <button class="copy-btn" id="copy-btn"
                 onclick="copyToClipboard()">📋</button></h3>
         <div class="progress-bar">
