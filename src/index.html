@@ -15,18 +15,20 @@
         }
 
         .container {
-            max-width: 400px;
-            padding: 20px;
+            width: 500px;
+            /* Increased width */
+            padding: 25px;
             border: 1px solid #ccc;
             border-radius: 10px;
             text-align: center;
+            background-color: #f9f9f9;
         }
 
         .progress-bar {
             width: 100%;
-            height: 10px;
+            height: 12px;
             background: #ddd;
-            border-radius: 5px;
+            border-radius: 6px;
             overflow: hidden;
             margin-top: 10px;
         }
@@ -38,18 +40,35 @@
             transition: width 1s linear;
         }
 
+        .form-group {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
         input,
         select {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             margin: 5px 0;
+            box-sizing: border-box;
+            display: block;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
         }
 
         .copy-btn {
             cursor: pointer;
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: 22px;
             margin-left: 10px;
         }
 
@@ -61,6 +80,7 @@
         .docs-link a {
             color: #007BFF;
             text-decoration: none;
+            font-size: 16px;
         }
 
         .docs-link a:hover {
@@ -69,9 +89,9 @@
     </style>
     <script>
         function generateRandomKey() {
-            const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; // Base32 字符集
+            const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
             let key = "";
-            for (let i = 0; i < 16; i++) { // 16 字符长度
+            for (let i = 0; i < 16; i++) {
                 key += charset[Math.floor(Math.random() * charset.length)];
             }
             return key;
@@ -146,27 +166,41 @@
 <body>
     <div class="container">
         <h2>TOTP Generator</h2>
-        <label>Secret Key:</label>
-        <input type="text" id="key" value="" placeholder="Enter TOTP Key" oninput="onInputChange()"><br>
-        <label>Digits:</label>
-        <input type="number" id="digits" value="6" oninput="onInputChange()"><br>
-        <label>Period (seconds):</label>
-        <input type="number" id="period" value="30" oninput="onInputChange()"><br>
-        <label>Algorithm:</label>
-        <select id="algorithm" oninput="onInputChange()">
-            <option value="SHA-1">SHA-1</option>
-            <option value="SHA-256">SHA-256</option>
-            <option value="SHA-512">SHA-512</option>
-        </select><br>
+
+        <div class="form-group">
+            <label for="key">Secret Key:</label>
+            <input type="text" id="key" value="" placeholder="Enter TOTP Key" oninput="onInputChange()">
+        </div>
+
+        <div class="form-group">
+            <label for="digits">Digits:</label>
+            <input type="number" id="digits" value="6" oninput="onInputChange()">
+        </div>
+
+        <div class="form-group">
+            <label for="period">Period (seconds):</label>
+            <input type="number" id="period" value="30" oninput="onInputChange()">
+        </div>
+
+        <div class="form-group">
+            <label for="algorithm">Algorithm:</label>
+            <select id="algorithm" oninput="onInputChange()">
+                <option value="SHA-1">SHA-1</option>
+                <option value="SHA-256">SHA-256</option>
+                <option value="SHA-512">SHA-512</option>
+            </select>
+        </div>
+
         <h3>OTP: <span id="otp">----</span> <button class="copy-btn" id="copy-btn"
                 onclick="copyToClipboard()">📋</button></h3>
+
         <div class="progress-bar">
             <div class="progress" id="progress"></div>
         </div>
+
         <p>Time Left: <span id="remaining">30</span> sec</p>
     </div>
 
-    <!-- 添加去往 /docs OpenAPI 文档的链接和描述 -->
     <div class="docs-link">
         <p>For more details on the API, please visit the <a href="/docs" target="_blank">OpenAPI documentation</a>.</p>
     </div>
