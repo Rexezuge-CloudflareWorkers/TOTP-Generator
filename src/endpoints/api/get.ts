@@ -70,8 +70,12 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
                 algorithm: z.string().regex(/^(SHA-1|SHA-256|SHA-512)$/).default("SHA-1"),
             });
 
+            // 预处理 key 参数：去除所有空格
+            const rawKey = url.searchParams.get("key") ?? "";
+            const cleanedKey = rawKey.replace(/\s+/g, "");
+
             const parsedParams = schema.safeParse({
-                key: url.searchParams.get("key"),
+                key: cleanedKey,
                 digits: url.searchParams.get("digits") ?? "6",
                 period: url.searchParams.get("period") ?? "30",
                 algorithm: url.searchParams.get("algorithm") ?? "SHA-1",
@@ -88,11 +92,11 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
             // 将算法名称转换为 otplib 支持的格式（去掉连字符并转换为小写）
             const normalizedAlgorithm = algorithm.replace("-", "").toLowerCase() as "sha1" | "sha256" | "sha512";
 
-            // 设置 TOTP 选项
+            // 设置 TOTP 配置
             authenticator.options = {
                 digits: digitsNum,
                 step: periodNum,
-                algorithm: normalizedAlgorithm
+                algorithm: normalizedAlgorithm,
             };
 
             // 生成 TOTP
