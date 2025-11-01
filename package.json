@@ -3,22 +3,24 @@
 	"version": "1.0.0",
 	"private": true,
 	"scripts": {
-		"predeploy": "node src/generateStaticString.js",
-		"deploy": "wrangler deploy",
+		"cf-typegen": "wrangler types",
+		"buildApp": "cd app/ && npm run release",
+		"predeploy": "npm install && npm run buildApp",
+		"deploy": "wrangler deploy --dry-run",
+		"postdeploy": "wrangler deploy",
 		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"cf-typegen": "wrangler types"
+		"start": "wrangler dev"
 	},
 	"dependencies": {
-		"chanfana": "^2.8.0",
-		"hono": "^4.7.5",
+		"chanfana": "^2.8.3",
+		"hono": "^4.10.4",
 		"otplib": "^12.0.1",
-		"zod": "^3.24.2"
+		"zod": "^4.1.12"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20250405.0",
-		"@types/node": "22.14.0",
+		"@cloudflare/workers-types": "^4.20251014.0",
+		"@types/node": "24.9.2",
 		"@types/service-worker-mock": "^2.0.4",
-		"wrangler": "^4.7.2"
+		"wrangler": "^4.45.3"
 	}
 }

@@ -6,7 +6,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "totp-generator",
 	"main": "src/index.ts",
-	"compatibility_date": "2025-03-19",
+	"compatibility_date": "2025-10-31",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
@@ -19,5 +19,8 @@
 	"routes": [],
 	"placement": {
 		"mode": "off"
+	},
+	"assets": {
+		"directory": "./app/dist/"
 	}
 }

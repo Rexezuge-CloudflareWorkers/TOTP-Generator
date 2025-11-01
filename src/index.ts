@@ -1,6 +1,5 @@
 import { fromHono } from "chanfana";
 import { GenerateTOTPRoute } from "endpoints/api/get";
-import { HomePageRoute } from "endpoints/get";
 import { Hono } from "hono";
 
 // Start a Hono app
@@ -12,7 +11,6 @@ const openapi = fromHono(app, {
 });
 
 // Register OpenAPI endpoints
-app.get("/", HomePageRoute);
 openapi.get('/generate-totp', GenerateTOTPRoute);
 
 // Export the Hono app
