@@ -1,0 +1,15 @@
+
+> totp-generator@1.0.0 dev
+> wrangler dev
+
+
+ ⛅️ wrangler 4.45.3 (update available 4.45.4)
+─────────────────────────────────────────────
+⎔ Starting local server...
+[wrangler:warn] The latest compatibility date supported by the installed Cloudflare Workers Runtime is "2025-10-11",
+but you've requested "2025-10-31". Falling back to "2025-10-11"...
+Features enabled by your requested compatibility date may not be available.
+Upgrade to `wrangler@4.45.4` to remove this warning.
+[wrangler:info] Ready on http://localhost:8787
+[wrangler:error] Error: Unknown zod object type, please specify `type` and other OpenAPI props using `ZodSchema.openapi`.
+[wrangler:info] GET /openapi.json 500 Internal Server Error (208ms)

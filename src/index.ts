@@ -1,5 +1,5 @@
 import { fromHono } from "chanfana";
-import { GenerateTOTPRoute } from "endpoints/api/get";
+import { GenerateTOTPRoute } from "./endpoints/api/get";
 import { Hono } from "hono";
 
 // Start a Hono app
@@ -14,4 +14,4 @@ const openapi = fromHono(app, {
 openapi.get('/generate-totp', GenerateTOTPRoute);
 
 // Export the Hono app
-export default app;
+export default openapi;

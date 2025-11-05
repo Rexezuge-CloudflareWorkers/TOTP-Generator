@@ -42,10 +42,13 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
                 description: "Successfully generated TOTP",
                 content: {
                     "application/json": {
-                        schema: z.object({
-                            otp: z.string(),
-                            remaining: z.number(),
-                        }),
+                        schema: {
+                            type: "object",
+                            properties: {
+                                otp: { type: "string" },
+                                remaining: { type: "number" }
+                            }
+                        },
                     },
                 },
             },
