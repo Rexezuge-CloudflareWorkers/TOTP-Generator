@@ -18,7 +18,7 @@ jobs:
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
         with:
-          upstream_sync_repo: Rexezuge-CloudflareWorkers/M365-Renew
+          upstream_sync_repo: Rexezuge-CloudflareWorkers/TOTP-Generator
           upstream_sync_branch: main
           target_sync_branch: main
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
