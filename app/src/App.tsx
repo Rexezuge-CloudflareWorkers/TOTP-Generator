@@ -25,8 +25,10 @@ function App() {
     }
 
     try {
+      const backendUrl = import.meta.env.VITE_OPTIONAL_BACKEND_URL || '';
+      const baseUrl = backendUrl ? backendUrl : '';
       const response = await fetch(
-        `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`
+        `${baseUrl}/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`
       );
 
       if (!response.ok) {
