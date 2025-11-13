@@ -179,7 +179,7 @@ function App() {
         <p className="text-gray-600">
           For more details on the API, please visit the{' '}
           <a
-            href="/docs"
+            href={`${import.meta.env.VITE_OPTIONAL_BACKEND_URL || ''}/docs`}
             target="_blank"
             className="text-blue-600 hover:underline"
           >
