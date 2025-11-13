@@ -1,0 +1,47 @@
+name: Deploy Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Upstream Sync]
+    types: [completed]
+
+jobs:
+  deploy:
+    if: ${{ github.repository != 'Rexezuge-CloudflareWorkers/TOTP-Generator' }}
+    name: Deploy to Cloudflare
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Dump FRONTEND_ENV to Repository
+        run: |
+          cd app/
+          if [ ! -f ".env" ]; then
+            echo "${FRONTEND_ENV}" > .env
+          fi
+        env:
+          FRONTEND_ENV: ${{ vars.FRONTEND_ENV }}
+
+      - name: Build Assets
+        run: npm run buildApp
+
+      - name: Deploy with Wrangler
+        run: npx wrangler pages deploy ./app/dist/ --project-name $CLOUDFLARE_PROJECT_NAME
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
