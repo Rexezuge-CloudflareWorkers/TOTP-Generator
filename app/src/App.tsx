@@ -6,6 +6,7 @@ function App() {
   const [period, setPeriod] = useState(30);
   const [algorithm, setAlgorithm] = useState('SHA-1');
   const [otp, setOtp] = useState('----');
+  const [prevOtp, setPrevOtp] = useState('----');
   const [remaining, setRemaining] = useState(30);
   const [copyIcon, setCopyIcon] = useState('📋');
 
@@ -27,17 +28,28 @@ function App() {
     try {
       const backendUrl = import.meta.env.VITE_OPTIONAL_BACKEND_URL || '';
       const baseUrl = backendUrl ? backendUrl : '';
-      const response = await fetch(
-        `${baseUrl}/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`
-      );
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.statusText}`);
+      const [currentResponse, prevResponse] = await Promise.all([
+        fetch(
+          `${baseUrl}/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`
+        ),
+        fetch(
+          `${baseUrl}/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}&timeOffset=-30`
+        ),
+      ]);
+
+      if (!currentResponse.ok || !prevResponse.ok) {
+        throw new Error(`Server error: ${currentResponse.statusText}`);
       }
 
-      const data = await response.json();
-      setOtp(data.otp);
-      setRemaining(data.remaining);
+      const [currentData, prevData] = await Promise.all([
+        currentResponse.json(),
+        prevResponse.json(),
+      ]);
+
+      setOtp(currentData.otp);
+      setPrevOtp(prevData.otp);
+      setRemaining(currentData.remaining);
     } catch (error) {
       console.error('Error fetching OTP:', error);
       alert('Failed to fetch OTP. Please check backend service.');
@@ -159,6 +171,9 @@ function App() {
               {copyIcon}
             </button>
           </h3>
+          <p className="text-sm text-gray-500 mt-2">
+            Previous: <span className="font-mono text-lg">{prevOtp}</span>
+          </p>
         </div>
 
         <div className="mb-4">

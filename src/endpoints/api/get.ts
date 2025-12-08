@@ -105,16 +105,18 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
             // 将算法名称转换为 otplib 支持的格式（去掉连字符并转换为小写）
             const normalizedAlgorithm = algorithm.replace("-", "").toLowerCase() as "sha1" | "sha256" | "sha512";
 
-            // 设置 TOTP 配置
+            // 生成 TOTP，应用时间偏移
+            const adjustedTime = Date.now() + (timeOffsetNum * 1000);
+            
+            // 设置 TOTP 配置，包括自定义时间
             authenticator.options = {
                 digits: digitsNum,
                 step: periodNum,
                 algorithm: normalizedAlgorithm,
+                epoch: adjustedTime,
             };
 
-            // 生成 TOTP，应用时间偏移
-            const adjustedTime = Math.floor(Date.now() / 1000) + timeOffsetNum;
-            const otp = authenticator.generate(key, adjustedTime);
+            const otp = authenticator.generate(key);
 
             // 计算剩余时间
             const currentTime = Math.floor(Date.now() / 1000);
