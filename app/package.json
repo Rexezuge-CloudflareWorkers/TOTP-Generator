@@ -13,26 +13,26 @@
     "lint": "eslint --ext .ts,.tsx --fix ."
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.9.x",
+    "@cloudflare/vite-plugin": "^1.17.x",
     "@tailwindcss/vite": "^4.1.x",
-    "@types/node": "^24.0.x",
-    "@types/react": "^19.1.x",
-    "@types/react-dom": "^19.1.x",
-    "@vitejs/plugin-react": "^4.6.x",
-    "eslint": "^9.30.x",
+    "@types/node": "^24.10.x",
+    "@types/react": "^19.2.x",
+    "@types/react-dom": "^19.2.x",
+    "@vitejs/plugin-react": "^5.1.x",
+    "eslint": "^9.39.x",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-react-hooks": "^5.2.x",
+    "eslint-plugin-react-hooks": "^7.0.x",
     "eslint-plugin-react-refresh": "^0.4.x",
-    "globals": "^16.3.x",
-    "prettier": "^3.6.2",
-    "typescript": "^5.8.x",
-    "typescript-eslint": "^8.36.x",
-    "vite": "^7.0.x"
+    "globals": "^16.5.x",
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.x",
+    "typescript-eslint": "^8.49.x",
+    "vite": "^7.2.x"
   },
   "dependencies": {
-    "react": "^19.1.x",
-    "react-dom": "^19.1.x"
+    "react": "^19.2.x",
+    "react-dom": "^19.2.x"
   },
   "type": "module"
 }

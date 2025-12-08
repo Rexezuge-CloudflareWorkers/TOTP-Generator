@@ -7,20 +7,16 @@
 		"buildApp": "cd app/ && npm run release",
 		"predeploy": "npm install && npm run buildApp",
 		"deploy": "wrangler deploy --dry-run",
-		"postdeploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev"
+		"postdeploy": "wrangler deploy"
 	},
 	"dependencies": {
-		"chanfana": "^2.8.3",
-		"hono": "^4.10.4",
-		"otplib": "^12.0.1",
-		"zod": "^4.1.12"
+		"chanfana": "^2.8.x",
+		"hono": "^4.10.x",
+		"otplib": "^12.0.x",
+		"zod": "^4.1.x"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20251107.0",
-		"@types/node": "24.10.0",
-		"@types/service-worker-mock": "^2.0.4",
-		"wrangler": "^4.46.0"
+		"@types/node": "24.10.x",
+		"wrangler": "^4.53.x"
 	}
 }
