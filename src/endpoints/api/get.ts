@@ -36,6 +36,13 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
                 required: false,
                 schema: { type: "string", enum: ["SHA-1", "SHA-256", "SHA-512"], default: "SHA-1" },
             },
+            {
+                name: "timeOffset",
+                in: "query",
+                description: "Time offset in seconds (e.g., -30 for OTP 30 seconds ago).",
+                required: false,
+                schema: { type: "integer", default: 0 },
+            },
         ],
         responses: {
             "200": {
@@ -71,6 +78,7 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
                 digits: z.string().regex(/^\d+$/).default("6"),
                 period: z.string().regex(/^\d+$/).default("30"),
                 algorithm: z.string().regex(/^(SHA-1|SHA-256|SHA-512)$/).default("SHA-1"),
+                timeOffset: z.string().regex(/^-?\d+$/).default("0"),
             });
 
             // 预处理 key 参数：去除所有空格
@@ -82,15 +90,17 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
                 digits: url.searchParams.get("digits") ?? "6",
                 period: url.searchParams.get("period") ?? "30",
                 algorithm: url.searchParams.get("algorithm") ?? "SHA-1",
+                timeOffset: url.searchParams.get("timeOffset") ?? "0",
             });
 
             if (!parsedParams.success) {
                 return c.json({ error: "Invalid request parameters", details: parsedParams.error.format() }, 400);
             }
 
-            const { key, digits, period, algorithm } = parsedParams.data;
+            const { key, digits, period, algorithm, timeOffset } = parsedParams.data;
             const digitsNum = parseInt(digits, 10);
             const periodNum = parseInt(period, 10);
+            const timeOffsetNum = parseInt(timeOffset, 10);
 
             // 将算法名称转换为 otplib 支持的格式（去掉连字符并转换为小写）
             const normalizedAlgorithm = algorithm.replace("-", "").toLowerCase() as "sha1" | "sha256" | "sha512";
@@ -102,8 +112,9 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
                 algorithm: normalizedAlgorithm,
             };
 
-            // 生成 TOTP
-            const otp = authenticator.generate(key);
+            // 生成 TOTP，应用时间偏移
+            const adjustedTime = Math.floor(Date.now() / 1000) + timeOffsetNum;
+            const otp = authenticator.generate(key, adjustedTime);
 
             // 计算剩余时间
             const currentTime = Math.floor(Date.now() / 1000);
