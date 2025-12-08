@@ -5,7 +5,7 @@
 	"scripts": {
 		"cf-typegen": "wrangler types",
 		"buildApp": "cd app/ && npm run release",
-		"predeploy": "npm install && npm run buildApp",
+		"predeploy": "npm install && npm run buildApp && npm run cf-typegen",
 		"deploy": "wrangler deploy --dry-run",
 		"postdeploy": "wrangler deploy"
 	},
