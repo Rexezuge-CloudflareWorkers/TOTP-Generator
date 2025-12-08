@@ -8,6 +8,7 @@
 	],
 	"preview_urls": false,
 	"workers_dev": true,
+    "minify": true,
 	"observability": {
 		"enabled": false,
 		"head_sampling_rate": 1
