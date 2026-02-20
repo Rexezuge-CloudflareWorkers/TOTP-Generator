@@ -13,7 +13,7 @@
     "lint": "eslint --ext .ts,.tsx --fix ."
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.17.x",
+    "@cloudflare/vite-plugin": "^1.25.x",
     "@tailwindcss/vite": "^4.1.x",
     "@types/node": "^24.10.x",
     "@types/react": "^19.2.x",
