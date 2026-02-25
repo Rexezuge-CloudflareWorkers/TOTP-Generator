@@ -10,13 +10,13 @@
 		"postdeploy": "wrangler deploy"
 	},
 	"dependencies": {
-		"chanfana": "^3.0.x",
+		"chanfana": "^3.1.x",
 		"hono": "^4.12.x",
 		"otplib": "^13.3.x",
 		"zod": "^4.3.x"
 	},
 	"devDependencies": {
 		"@types/node": "25.3.x",
-		"wrangler": "^4.67.x"
+		"wrangler": "^4.68.x"
 	}
 }
