@@ -6,6 +6,9 @@ on:
     workflows: [Upstream Sync]
     types: [completed]
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     if: ${{ github.repository != 'Rexezuge-CloudflareWorkers/TOTP-Generator' }}
