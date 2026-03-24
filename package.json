@@ -12,7 +12,7 @@
 	"dependencies": {
 		"chanfana": "^3.3.x",
 		"hono": "^4.12.x",
-		"otplib": "^13.3.x",
+		"otplib": "^13.4.x",
 		"zod": "^4.3.x"
 	},
 	"devDependencies": {
