@@ -1,6 +1,6 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { authenticator } from "otplib";
+import { generateSync } from "otplib";
 
 export class GenerateTOTPRoute extends OpenAPIRoute {
     schema = {
@@ -106,17 +106,15 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
             const normalizedAlgorithm = algorithm.replace("-", "").toLowerCase() as "sha1" | "sha256" | "sha512";
 
             // 生成 TOTP，应用时间偏移
-            const adjustedTime = Date.now() + (timeOffsetNum * 1000);
-            
-            // 设置 TOTP 配置，包括自定义时间
-            authenticator.options = {
+            const adjustedTime = Math.floor((Date.now() + (timeOffsetNum * 1000)) / 1000);
+
+            const otp = generateSync({
+                secret: key,
                 digits: digitsNum,
-                step: periodNum,
+                period: periodNum,
                 algorithm: normalizedAlgorithm,
                 epoch: adjustedTime,
-            };
-
-            const otp = authenticator.generate(key);
+            });
 
             // 计算剩余时间
             const currentTime = Math.floor(Date.now() / 1000);
