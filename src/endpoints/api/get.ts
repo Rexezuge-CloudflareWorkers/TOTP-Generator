@@ -1,6 +1,6 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
-import { generateSync } from "otplib";
+import { generateSync, createGuardrails } from "otplib";
 
 export class GenerateTOTPRoute extends OpenAPIRoute {
     schema = {
@@ -114,6 +114,7 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
                 period: periodNum,
                 algorithm: normalizedAlgorithm,
                 epoch: adjustedTime,
+                guardrails: createGuardrails({ MIN_SECRET_BYTES: 1 }),
             });
 
             // 计算剩余时间
