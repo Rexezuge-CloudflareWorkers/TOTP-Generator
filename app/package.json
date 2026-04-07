@@ -28,7 +28,7 @@
     "prettier": "^3.7.4",
     "typescript": "^5.9.x",
     "typescript-eslint": "^8.49.x",
-    "vite": "^7.2.x"
+    "vite": "^7.3.x"
   },
   "dependencies": {
     "react": "^19.2.x",
