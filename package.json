@@ -13,7 +13,7 @@
 		"chanfana": "^3.3.x",
 		"hono": "^4.12.x",
 		"otplib": "^13.4.x",
-		"zod": "^4.3.x"
+		"zod": "^4.4.x"
 	},
 	"devDependencies": {
 		"@types/node": "25.6.x",
