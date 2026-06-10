@@ -1,4 +1,4 @@
-import { OpenAPIRoute } from "chanfana";
+import { OpenAPIRoute, type OpenAPIRouteSchema } from "chanfana";
 import { z } from "zod";
 import { generateSync, createGuardrails } from "otplib";
 
@@ -19,7 +19,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 export class GenerateTOTPRoute extends OpenAPIRoute {
-    schema = {
+    schema: OpenAPIRouteSchema = {
         tags: ["TOTP"],
         summary: "Generate a TOTP code",
         description: "Generates a Time-based One-Time Password (TOTP) based on a provided secret key, number of digits, time period, and algorithm.",

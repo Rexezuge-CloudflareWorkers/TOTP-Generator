@@ -1,0 +1,120 @@
+name: Continuous Integration
+
+permissions:
+  contents: read
+
+on:
+  repository_dispatch:
+    types:
+      - Upstream Sync
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: continuous-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            app/package-lock.json
+
+      - name: Install Backend Dependencies
+        run: npm ci
+
+      - name: Install Frontend Dependencies
+        run: npm --prefix app ci
+
+      - name: Run Tests and Checks
+        run: npm run checks
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            app/package-lock.json
+
+      - name: Install Backend Dependencies
+        run: npm ci
+
+      - name: Install Frontend Dependencies
+        run: npm --prefix app ci
+
+      - name: Build Frontend
+        run: npm run buildApp
+
+      - name: Prepare Wrangler Configuration
+        run: cp wrangler.jsonc.template wrangler.jsonc
+
+      - name: Dry Run Worker Build
+        run: npm run deploy:dry-run
+
+  dependabot-auto-merge:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.state == 'open' && !github.event.repository.fork }}
+    name: Auto-Merge Dependabot PR
+    needs:
+      - checks
+      - build
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enable Auto-Merge
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
+  dispatch-upstream-sync-deployment:
+    if: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'Upstream Sync' }}
+    name: Dispatch Upstream Sync Deployment
+    needs:
+      - checks
+      - build
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dispatch Deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              event_type: 'Upstream Sync Deployment',
+              client_payload: {
+                branch: context.payload.client_payload?.branch || 'main',
+                sha: context.payload.client_payload?.sha || context.sha,
+              },
+            });

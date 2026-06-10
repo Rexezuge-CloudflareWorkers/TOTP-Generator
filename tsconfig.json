@@ -21,10 +21,7 @@
 		"outDir": "",
 		"target": "esnext",
 		"module": "esnext",
-		"types": [
-			"@types/node",
-			"@types/service-worker-mock"
-		]
+		"types": ["node"]
 	},
 	"exclude": ["node_modules", "dist", "tests"],
 	"include": ["src", "scripts"]

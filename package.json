@@ -4,10 +4,13 @@
 	"private": true,
 	"scripts": {
 		"cf-typegen": "wrangler types",
-		"buildApp": "cd app/ && npm run release",
-		"predeploy": "npm install && npm run buildApp && npm run cf-typegen",
-		"deploy": "wrangler deploy --dry-run",
-		"postdeploy": "wrangler deploy"
+		"buildApp": "npm --prefix app run release",
+		"build": "npm run buildApp",
+		"checks": "npm run typecheck && npm --prefix app run lint",
+		"typecheck": "tsc --noEmit && npm --prefix app run typecheck",
+		"predeploy": "npm run build",
+		"deploy:dry-run": "wrangler deploy --dry-run",
+		"deploy": "wrangler deploy"
 	},
 	"dependencies": {
 		"chanfana": "^3.3.x",
@@ -17,6 +20,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "25.9.x",
+		"typescript": "^5.9.x",
 		"wrangler": "^4.95.x"
 	}
 }

@@ -7,7 +7,8 @@
     "clean": "rm -rf dist/",
     "prebuild": "npm run prettier && npm run lint",
     "build": "tsc -b && vite build",
-    "prerelease": "npm run clean && npm install",
+    "typecheck": "tsc -b",
+    "prerelease": "npm run clean",
     "release": "npm run build",
     "prettier": "prettier --write .",
     "lint": "eslint --ext .ts,.tsx --fix ."
