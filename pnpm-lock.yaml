@@ -13,7 +13,7 @@ importers:
         version: 3.3.0
       hono:
         specifier: ^4.12.x
-        version: 4.12.26
+        version: 4.12.27
       otplib:
         specifier: ^13.4.x
         version: 13.4.1
@@ -467,8 +467,8 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
 
-  hono@4.12.26:
-    resolution: {integrity: sha512-uyZtpnYxM9CmQ7QsQknM4zN8EftNqhON1qYeIKM0Se67CCEe2c44xyGURwB0axX2fBDu1dqHrHAc1hmNT8ITkw==}
+  hono@4.12.27:
+    resolution: {integrity: sha512-1yrb/+w6HWQJrUCLkJ2IF5jNIPvvFkblV5RNOYl6bV+OA6p9GLcMpHFFGTosSvHvcAUibuUukRqhlYI4z32C7Q==}
     engines: {node: '>=16.9.0'}
 
   js-yaml@4.2.0:
@@ -895,7 +895,7 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
-  hono@4.12.26: {}
+  hono@4.12.27: {}
 
   js-yaml@4.2.0:
     dependencies:
