@@ -1,5 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "totp-generator-app",
 	"compatibility_date": "2025-10-31",
 	"pages_build_output_dir": "./app/dist/",
 	"services": [
