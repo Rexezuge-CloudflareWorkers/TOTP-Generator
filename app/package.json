@@ -20,7 +20,7 @@
     "@types/react": "^19.2.x",
     "@types/react-dom": "^19.2.x",
     "@vitejs/plugin-react": "^5.2.x",
-    "eslint": "^9.39.x",
+    "eslint": "^10.7.x",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react-hooks": "^7.0.x",
@@ -28,7 +28,7 @@
     "globals": "^16.5.x",
     "prettier": "^3.7.4",
     "typescript": "^5.9.x",
-    "typescript-eslint": "^8.49.x",
+    "typescript-eslint": "^8.65.x",
     "vite": "^8.0.x"
   },
   "dependencies": {
