@@ -97,13 +97,15 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm --prefix app ci
 
-      - name: Prepare Frontend Environment
+      - name: Prepare Wrangler Pages Configuration
         run: |
-          if [ -n "${FRONTEND_ENV}" ]; then
-            printf '%s\n' "${FRONTEND_ENV}" > app/.env
+          if [ -n "${WRANGLER_PAGES_JSONC}" ]; then
+            printf '%s\n' "${WRANGLER_PAGES_JSONC}" > wrangler.pages.jsonc
+          else
+            cp wrangler.pages.jsonc.template wrangler.pages.jsonc
           fi
         env:
-          FRONTEND_ENV: ${{ vars.FRONTEND_ENV }}
+          WRANGLER_PAGES_JSONC: ${{ vars.WRANGLER_PAGES_JSONC }}
 
       - name: Build Frontend
         run: npm run buildApp
@@ -119,7 +121,8 @@ jobs:
 
       - name: Deploy with Wrangler Pages
         run: |
-          npx wrangler pages deploy ./app/dist/ \
+          npx wrangler pages deploy \
+            --config wrangler.pages.jsonc \
             --project-name "${CLOUDFLARE_PAGES_PROJECT_NAME}" \
             --branch "${DEPLOY_BRANCH}" \
             --commit-hash "${DEPLOY_SHA}" \
