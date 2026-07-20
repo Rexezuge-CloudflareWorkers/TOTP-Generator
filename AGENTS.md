@@ -34,20 +34,24 @@ npm run lint        # Lint and fix
 ## Important Configuration
 
 - **wrangler.jsonc**: Not committed (in `.gitignore`). Template at `wrangler.jsonc.template`. Secrets are stored in GitHub Actions vars/secrets and dumped at deploy time.
-- **Frontend env**: `app/.env` (not committed). Use `app/.env.example` as template. `VITE_OPTIONAL_BACKEND_URL` for external API.
+- **wrangler.pages.jsonc**: Not committed (in `.gitignore`). Template at `wrangler.pages.jsonc.template`. For Pages deployment with service binding.
+- **Frontend env**: No longer used. `VITE_OPTIONAL_BACKEND_URL` has been removed in favor of the Pages Function proxy pattern.
 
 ## Architecture Notes
 
 - **Backend entry**: `src/index.ts` - Hono app with CORS, OpenAPI docs at `/docs`
 - **API endpoint**: `/generate-totp` with query params: `key`, `digits`, `period`, `algorithm`, `timeOffset`
-- **Frontend**: Vite + React 19 + TailwindCSS v4. Built to `app/dist/`, served by Worker.
+- **Frontend**: Vite + React 19 + TailwindCSS v4. Built to `app/dist/`, served by Worker or Pages.
+- **Pages Function proxy**: `functions/[[path]].ts` proxies `/generate-totp`, `/docs`, `/openapi.json` to the Worker via service binding `API_WORKER` — no external HTTP calls.
+- **Pages routing**: `app/public/_routes.json` controls which paths hit the function vs. served directly.
 
 ## CI/CD
 
-- **Two deploy workflows**: `deploy-cloudflare-worker.yml` and `deploy-cloudflare-pages.yml`
-- Both trigger on `upstream-sync.yml` completion or manual dispatch
+- **Two deploy workflows**: `continuous-deployment.yml` (contains `deploy-worker` and `deploy-pages` jobs)
+- Both trigger on CI completion or manual dispatch
 - Fork repos deploy to Cloudflare; main repo skips deploy (conditional: `if: ${{ github.repository != 'Rexezuge-CloudflareWorkers/TOTP-Generator' }}`)
 - **Node version**: 24 (used in CI and locally)
+- **Pages deployment**: Uses `wrangler.pages.jsonc` (generated from template or `WRANGLER_PAGES_JSONC` var) for service binding configuration. The `API_WORKER` binding connects Pages to the Worker.
 
 ## TypeScript Configs
 

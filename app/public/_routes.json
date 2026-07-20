@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/generate-totp", "/docs", "/openapi.json"],
+  "exclude": ["/assets/*"]
+}

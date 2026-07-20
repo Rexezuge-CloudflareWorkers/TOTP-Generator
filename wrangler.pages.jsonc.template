@@ -1,0 +1,11 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"compatibility_date": "2025-10-31",
+	"pages_build_output_dir": "./app/dist/",
+	"services": [
+		{
+			"binding": "API_WORKER",
+			"service": "totp-generator"
+		}
+	]
+}

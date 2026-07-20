@@ -27,18 +27,15 @@ function App() {
     }
 
     try {
-      const backendUrl = import.meta.env.VITE_OPTIONAL_BACKEND_URL || '';
-      const baseUrl = backendUrl ? backendUrl : '';
-
       const [currentResponse, prevResponse, nextResponse] = await Promise.all([
         fetch(
-          `${baseUrl}/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`
+          `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`
         ),
         fetch(
-          `${baseUrl}/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}&timeOffset=-30`
+          `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}&timeOffset=-30`
         ),
         fetch(
-          `${baseUrl}/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}&timeOffset=30`
+          `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}&timeOffset=30`
         ),
       ]);
 
@@ -169,7 +166,8 @@ function App() {
 
         <div className="text-center mb-4">
           <h3 className="text-xl font-semibold">
-            Current: <span className="font-mono text-2xl text-blue-600">{otp}</span>
+            Current:{' '}
+            <span className="font-mono text-2xl text-blue-600">{otp}</span>
             <button
               onClick={copyToClipboard}
               className="ml-3 text-2xl hover:bg-gray-100 p-1 rounded"
@@ -205,7 +203,7 @@ function App() {
         <p className="text-gray-600">
           For more details on the API, please visit the{' '}
           <a
-            href={`${import.meta.env.VITE_OPTIONAL_BACKEND_URL || ''}/docs`}
+            href={`/docs`}
             target="_blank"
             className="text-blue-600 hover:underline"
           >
