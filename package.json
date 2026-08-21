@@ -21,6 +21,6 @@
 	"devDependencies": {
 		"@types/node": "26.2.x",
 		"typescript": "^7.0.x",
-		"wrangler": "^4.120.x"
+		"wrangler": "^4.123.x"
 	}
 }
