@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       chanfana:
-        specifier: ^3.3.x
-        version: 3.3.0
+        specifier: ^3.4.x
+        version: 3.4.0
       hono:
         specifier: ^4.13.x
         version: 4.13.1
@@ -586,8 +586,8 @@ packages:
   blake3-wasm@2.1.5:
     resolution: {integrity: sha512-F1+K8EbfOZE49dtoPtmxUQrpXaBIl3ICvasLh+nJta0xkz+9kF/7uet9fLnwKqhDrmj6g+6K3Tw9yQPUg2ka5g==}
 
-  chanfana@3.3.0:
-    resolution: {integrity: sha512-YKZkjymihSi9Wiwb4BbdMzXH7j9OxT4KS+5b9Y9ZUsj6Wthfodkw81cgoSEOMvgMTicCryohKhKZSIKCA6GFQA==}
+  chanfana@3.4.0:
+    resolution: {integrity: sha512-zNXyjQWnuhxd2m5QOQjAT7dCi8jg/SXckhD3y/Z6PKJfsf/XfSlvxyxFJpJh8O19lrvrsM4SUgEz2628imtWJQ==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -616,8 +616,8 @@ packages:
     resolution: {integrity: sha512-kdJoFVv2xmayw6cY09H7AbMJMt8Jn5jdlEdXsP7AGBdF2DIptVlKlOLKXP41yPip4/a3yQPv9gVcJYI8YY04dw==}
     engines: {node: '>=16.9.0'}
 
-  js-yaml@4.2.0:
-    resolution: {integrity: sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw==}
+  js-yaml@4.3.1:
+    resolution: {integrity: sha512-CY6crGq313MX8GkwvB7tzgp99vjQxY1++5y10/BKN/GUfHqWaOGQMNZkBvqSzsZKWk/ijwHlWzzkLulsGHhjWQ==}
     hasBin: true
 
   kleur@4.1.5:
@@ -628,8 +628,8 @@ packages:
     resolution: {integrity: sha512-DtOG0BeanIxs2sH0smFvExZD89cBQwGckbHiFkRJrrNAUu3NGClZkUxqu+zy7HYfKBAgq935EMY49vIPm3JVdA==}
     engines: {node: '>=22.0.0'}
 
-  openapi3-ts@4.6.0:
-    resolution: {integrity: sha512-a4sfn6L2sIShhtzJqmjGrARvxAW/3F2BJDdyRVvNF9VhAsZSh5hSyI3a9TNvmzBxXmq66nY5LNT5bQcBxYAZZg==}
+  openapi3-ts@4.6.1:
+    resolution: {integrity: sha512-XW9MOldkhoICNeXVzzmXzmOW5G73ppOEGmh7fLCqHjgfdEYCGGN+00MlVCeUZgovjjfC56j9tvtDt1zGabNjjA==}
 
   otplib@13.4.1:
     resolution: {integrity: sha512-o5CxfDw6bh7hoDv0NUUIcc0RqzJ9ipfUrzeKheKJ+vs4rXZnDlA9n4a/7R1cDjpmLjKLix4BgNVRmoDkm5rLSQ==}
@@ -720,7 +720,7 @@ snapshots:
 
   '@asteasolutions/zod-to-openapi@8.5.0(zod@4.4.3)':
     dependencies:
-      openapi3-ts: 4.6.0
+      openapi3-ts: 4.6.1
       zod: 4.4.3
 
   '@cloudflare/kv-asset-handler@0.5.0': {}
@@ -1063,11 +1063,11 @@ snapshots:
 
   blake3-wasm@2.1.5: {}
 
-  chanfana@3.3.0:
+  chanfana@3.4.0:
     dependencies:
       '@asteasolutions/zod-to-openapi': 8.5.0(zod@4.4.3)
-      js-yaml: 4.2.0
-      openapi3-ts: 4.6.0
+      js-yaml: 4.3.1
+      openapi3-ts: 4.6.1
       yargs-parser: 22.0.0
       zod: 4.4.3
 
@@ -1111,7 +1111,7 @@ snapshots:
 
   hono@4.13.1: {}
 
-  js-yaml@4.2.0:
+  js-yaml@4.3.1:
     dependencies:
       argparse: 2.0.1
 
@@ -1129,7 +1129,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  openapi3-ts@4.6.0:
+  openapi3-ts@4.6.1:
     dependencies:
       yaml: 2.9.0
 
