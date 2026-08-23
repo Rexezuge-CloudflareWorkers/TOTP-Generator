@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 function App() {
   const [key, setKey] = useState('');
@@ -10,6 +10,7 @@ function App() {
   const [nextOtp, setNextOtp] = useState('------');
   const [remaining, setRemaining] = useState(30);
   const [copyIcon, setCopyIcon] = useState('📋');
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const generateRandomKey = () => {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -26,16 +27,26 @@ function App() {
       return;
     }
 
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const { signal } = controller;
+
     try {
       const [currentResponse, prevResponse, nextResponse] = await Promise.all([
         fetch(
-          `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`
+          `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`,
+          { signal }
         ),
         fetch(
-          `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}&timeOffset=-30`
+          `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}&timeOffset=-30`,
+          { signal }
         ),
         fetch(
-          `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}&timeOffset=30`
+          `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}&timeOffset=30`,
+          { signal }
         ),
       ]);
 
@@ -54,6 +65,7 @@ function App() {
       setNextOtp(nextData.otp);
       setRemaining(currentData.remaining);
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Error fetching OTP:', error);
       alert('Failed to fetch OTP. Please check backend service.');
     }
