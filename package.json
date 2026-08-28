@@ -15,7 +15,7 @@
 	"dependencies": {
 		"chanfana": "^3.4.x",
 		"hono": "^4.13.x",
-		"otplib": "^13.4.x",
+		"otplib": "^13.5.x",
 		"zod": "^4.4.x"
 	},
 	"devDependencies": {
