@@ -172,6 +172,7 @@ function App() {
   const [copyIcon, setCopyIcon] = useState('📋');
   const [requests, setRequests] = useState<RequestStatusEntry[]>([]);
   const [expandedId, setExpandedId] = useState<RequestId | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastCounterRef = useRef<number | null>(null);
 
@@ -245,6 +246,12 @@ function App() {
   }, [key, digits, period, algorithm, generateOTP]);
 
   useEffect(() => {
+    // When auto-refresh is paused, freeze the countdown display and skip
+    // fetching on counter rollover. Param-change effect above still fetches.
+    // lastCounterRef is intentionally left untouched so toggling back ON
+    // can detect staleness and refresh immediately.
+    if (!autoRefresh) return;
+
     // Absolute wall-clock sync: recompute from Date.now() every tick so
     // drift can't accumulate and background-tab throttling self-heals.
     const sync = () => {
@@ -282,7 +289,7 @@ function App() {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('pageshow', handleFocus);
     };
-  }, [period, generateOTP]);
+  }, [period, generateOTP, autoRefresh]);
 
   const copyToClipboard = () => {
     navigator.clipboard
@@ -392,19 +399,57 @@ function App() {
           </div>
         </div>
 
-        <div className="mb-4">
-          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-green-500 transition-all duration-1000 ease-linear"
-              style={{
-                width: `${(remaining / safePeriodForDisplay) * 100}%`,
-              }}
-            ></div>
-          </div>
+        <div className="mb-2">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoRefresh}
+            aria-label="Toggle auto-refresh on countdown"
+            title={
+              autoRefresh
+                ? 'Auto-refresh ON — click to pause'
+                : 'Auto-refresh paused — click to resume'
+            }
+            onClick={() => {
+              if (!autoRefresh) {
+                // Turning back ON: refresh immediately if the displayed OTP
+                // went stale while paused, otherwise just resync the display.
+                // Checked here (before the effect resets lastCounterRef) so
+                // staleness is still detectable.
+                if (lastCounterRef.current !== getCounter(period)) {
+                  void generateOTP();
+                } else {
+                  setRemaining(getRemaining(period));
+                }
+              }
+              setAutoRefresh((v) => !v);
+            }}
+            className="block w-full cursor-pointer rounded-full py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            <span className="block w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+              <span
+                className={`block h-full transition-all duration-1000 ease-linear ${autoRefresh ? 'bg-green-500' : 'bg-gray-400'}`}
+                style={{
+                  width: `${(remaining / safePeriodForDisplay) * 100}%`,
+                }}
+              />
+            </span>
+          </button>
         </div>
 
         <p className="text-center text-gray-600">
           Time Left: <span className="font-semibold">{remaining}</span> sec
+          {!autoRefresh && (
+            <span className="ml-1 text-sm text-gray-400">(paused)</span>
+          )}
+        </p>
+        <p
+          className="mt-1 text-center text-xs text-gray-500"
+          aria-live="polite"
+        >
+          {autoRefresh
+            ? 'Auto-refresh ON — click the progress bar to pause.'
+            : 'Auto-refresh paused — click the progress bar to resume. Editing key or options still refreshes.'}
         </p>
 
         <div className="mt-6 border-t border-gray-200 pt-4">
