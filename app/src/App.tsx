@@ -142,6 +142,24 @@ function generateRandomKey() {
   return key;
 }
 
+function getSafePeriod(periodSec: number): number {
+  return Number.isFinite(periodSec) && periodSec > 0
+    ? Math.floor(periodSec)
+    : 30;
+}
+
+function getRemaining(periodSec: number): number {
+  const safe = getSafePeriod(periodSec);
+  const nowSec = Math.floor(Date.now() / 1000);
+  const remaining = safe - (nowSec % safe);
+  return Math.min(Math.max(remaining, 1), safe);
+}
+
+function getCounter(periodSec: number): number {
+  const safe = getSafePeriod(periodSec);
+  return Math.floor(Math.floor(Date.now() / 1000) / safe);
+}
+
 function App() {
   const [key, setKey] = useState(generateRandomKey);
   const [digits, setDigits] = useState(6);
@@ -155,6 +173,7 @@ function App() {
   const [requests, setRequests] = useState<RequestStatusEntry[]>([]);
   const [expandedId, setExpandedId] = useState<RequestId | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const lastCounterRef = useRef<number | null>(null);
 
   const generateOTP = useCallback(async () => {
     if (!key) {
@@ -168,12 +187,13 @@ function App() {
     abortControllerRef.current = controller;
     const { signal } = controller;
 
+    const safePeriod = getSafePeriod(period);
     const base = `/generate-totp-batch`;
-    const offsets = [-30, 0, 30];
+    const offsets = [-safePeriod, 0, safePeriod];
 
     const result = await fetchTotpBatch(
       'batch',
-      'Previous (-30s), Current, Next (+30s)',
+      `Previous (-${safePeriod}s), Current, Next (+${safePeriod}s)`,
       base,
       { key, digits, period, algorithm, offsets },
       signal
@@ -182,6 +202,10 @@ function App() {
     if (result === null) return;
 
     setRequests([result.entry]);
+    // Record the counter we just fetched (even on failure) so the
+    // interval sync doesn't retry every second and spam the backend.
+    // Remaining display is driven by wall-clock, so it stays correct.
+    lastCounterRef.current = getCounter(period);
 
     if (
       result.entry.ok &&
@@ -191,13 +215,13 @@ function App() {
       const otpFor = (offset: number) =>
         result.otps?.find((o) => o.offset === offset)?.otp;
       const current = otpFor(0);
-      const prev = otpFor(-30);
-      const next = otpFor(30);
+      const prev = otpFor(-safePeriod);
+      const next = otpFor(safePeriod);
       if (current !== undefined && prev !== undefined && next !== undefined) {
         setOtp(current);
         setPrevOtp(prev);
         setNextOtp(next);
-        setRemaining(result.remaining);
+        setRemaining(getRemaining(period));
       } else {
         console.error(
           'Error fetching OTP (batch): missing offset in response',
@@ -221,14 +245,44 @@ function App() {
   }, [key, digits, period, algorithm, generateOTP]);
 
   useEffect(() => {
-    if (remaining > 0) {
-      const timer = setTimeout(() => setRemaining(remaining - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      const timeout = setTimeout(generateOTP, 0);
-      return () => clearTimeout(timeout);
-    }
-  }, [remaining, generateOTP]);
+    // Absolute wall-clock sync: recompute from Date.now() every tick so
+    // drift can't accumulate and background-tab throttling self-heals.
+    const sync = () => {
+      setRemaining(getRemaining(period));
+      const currentCounter = getCounter(period);
+      if (currentCounter !== lastCounterRef.current) {
+        // Mark optimistically to avoid duplicate fetches while the
+        // request is in flight (e.g. slow network + 1s interval).
+        lastCounterRef.current = currentCounter;
+        void generateOTP();
+      }
+    };
+
+    // Reset to the current counter so the debounced param-change fetch
+    // (above) owns the refresh and this effect doesn't double-fetch.
+    lastCounterRef.current = getCounter(period);
+
+    // Immediate display refresh without a synchronous setState in the
+    // effect body (keeps react-hooks/set-state-in-effect happy).
+    const immediate = setTimeout(sync, 0);
+    const interval = setInterval(sync, 1000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') sync();
+    };
+    const handleFocus = () => sync();
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('pageshow', handleFocus);
+    return () => {
+      clearTimeout(immediate);
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handleFocus);
+    };
+  }, [period, generateOTP]);
 
   const copyToClipboard = () => {
     navigator.clipboard
@@ -241,6 +295,8 @@ function App() {
         console.error('Failed to copy OTP:', err);
       });
   };
+
+  const safePeriodForDisplay = getSafePeriod(period);
 
   return (
     <div className="flex flex-col items-center p-5 min-h-screen bg-gray-50">
@@ -340,7 +396,9 @@ function App() {
           <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 transition-all duration-1000 ease-linear"
-              style={{ width: `${(remaining / period) * 100}%` }}
+              style={{
+                width: `${(remaining / safePeriodForDisplay) * 100}%`,
+              }}
             ></div>
           </div>
         </div>
