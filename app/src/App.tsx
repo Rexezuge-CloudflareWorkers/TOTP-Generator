@@ -160,6 +160,19 @@ function getCounter(periodSec: number): number {
   return Math.floor(Math.floor(Date.now() / 1000) / safe);
 }
 
+const AUTO_REFRESH_STORAGE_KEY = 'totp-generator:auto-refresh';
+
+function readStoredAutoRefresh(): boolean {
+  try {
+    const raw = localStorage.getItem(AUTO_REFRESH_STORAGE_KEY);
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+  } catch {
+    // Storage unavailable (e.g. private mode) — fall through to default.
+  }
+  return true;
+}
+
 function App() {
   const [key, setKey] = useState(generateRandomKey);
   const [digits, setDigits] = useState(6);
@@ -172,9 +185,19 @@ function App() {
   const [copyIcon, setCopyIcon] = useState('📋');
   const [requests, setRequests] = useState<RequestStatusEntry[]>([]);
   const [expandedId, setExpandedId] = useState<RequestId | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(
+    readStoredAutoRefresh
+  );
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastCounterRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, String(autoRefresh));
+    } catch {
+      // Ignore quota/private-mode errors — app still works without persistence.
+    }
+  }, [autoRefresh]);
 
   const generateOTP = useCallback(async () => {
     if (!key) {
