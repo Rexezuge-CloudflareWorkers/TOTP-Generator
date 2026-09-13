@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Shield body -->
+  <path d="M16 3 L26 7.5 V15 C26 22 21.5 27 16 29 C10.5 27 6 22 6 15 V7.5 Z" fill="#ffffff" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Keyhole circle -->
+  <circle cx="16" cy="14" r="3.2" fill="#2563eb"/>
+  <!-- Keyhole stem -->
+  <path d="M14.8 15.8 L13.5 21 H18.5 L17.2 15.8" fill="#2563eb" stroke="#2563eb" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Validity dot (remaining-time accent) -->
+  <circle cx="16" cy="24" r="1.6" fill="#22c55e"/>
+</svg>
