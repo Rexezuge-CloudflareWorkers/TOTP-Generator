@@ -1,6 +1,10 @@
 import { OpenAPIRoute, type OpenAPIRouteSchema } from "chanfana";
 import { z } from "zod";
-import { generateSync, createGuardrails } from "otplib";
+import {
+    computeRemaining,
+    generateSingleTotp,
+    getErrorMessage,
+} from "../../lib/totp";
 
 const requestSchema = z.object({
     key: z.string().min(16, "Key must be at least 16 characters long."),
@@ -9,14 +13,6 @@ const requestSchema = z.object({
     algorithm: z.enum(["SHA-1", "SHA-256", "SHA-512"]).default("SHA-1"),
     timeOffset: z.coerce.number().int().min(-3600, "Time offset must be between -3600 and 3600 seconds.").max(3600, "Time offset must be between -3600 and 3600 seconds.").default(0),
 });
-
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error && error.message) {
-        return error.message;
-    }
-
-    return "Unable to generate TOTP with the provided parameters.";
-}
 
 export class GenerateTOTPRoute extends OpenAPIRoute {
     schema: OpenAPIRouteSchema = {
@@ -107,20 +103,15 @@ export class GenerateTOTPRoute extends OpenAPIRoute {
         try {
             const { key, digits, period, algorithm, timeOffset } = parsedParams.data;
 
-            const normalizedAlgorithm = algorithm.replace("-", "").toLowerCase() as "sha1" | "sha256" | "sha512";
-            const adjustedEpoch = Math.floor((Date.now() + (timeOffset * 1000)) / 1000);
-
-            const otp = generateSync({
-                secret: key,
+            const otp = generateSingleTotp({
+                key,
                 digits,
                 period,
-                algorithm: normalizedAlgorithm,
-                epoch: adjustedEpoch,
-                guardrails: createGuardrails({ MIN_SECRET_BYTES: 1 }),
+                algorithm,
+                timeOffset,
             });
 
-            const currentTime = Math.floor(Date.now() / 1000);
-            const remaining = period - (currentTime % period);
+            const remaining = computeRemaining(period);
 
             return c.json({ otp, remaining });
         } catch (error) {

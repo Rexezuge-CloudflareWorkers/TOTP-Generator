@@ -1,5 +1,6 @@
 import { fromHono } from "chanfana";
 import { GenerateTOTPRoute } from "./endpoints/api/get";
+import { GenerateTOTPBatchRoute } from "./endpoints/api/postBatch";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
@@ -16,6 +17,7 @@ const openapi = fromHono(app, {
 
 // Register OpenAPI endpoints
 openapi.get('/generate-totp', GenerateTOTPRoute);
+openapi.post('/generate-totp-batch', GenerateTOTPBatchRoute);
 
 // Export the Hono app
 export default openapi;
