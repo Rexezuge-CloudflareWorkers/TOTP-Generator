@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-type RequestId = 'current' | 'previous' | 'next';
+type RequestId = 'batch';
 
 type RequestStatusEntry = {
   id: RequestId;
   label: string;
+  method: string;
   url: string;
   status: number;
   ok: boolean;
@@ -12,9 +13,14 @@ type RequestStatusEntry = {
   timestamp: number;
 };
 
+type BatchOtpEntry = {
+  offset: number;
+  otp: string;
+};
+
 type FetchResult = {
   entry: RequestStatusEntry;
-  otp?: string;
+  otps?: BatchOtpEntry[];
   remaining?: number;
 };
 
@@ -50,22 +56,33 @@ function extractErrorMessage(
   }
 }
 
-async function fetchTotpRequest(
+async function fetchTotpBatch(
   id: RequestId,
   label: string,
   url: string,
+  body: {
+    key: string;
+    digits: number;
+    period: number;
+    algorithm: string;
+    offsets: number[];
+  },
   signal: AbortSignal
 ): Promise<FetchResult | null> {
   const timestamp = Date.now();
+  const entryBase = { id, label, method: 'POST', url, timestamp };
   try {
-    const response = await fetch(url, { signal });
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal,
+    });
     const bodyText = await response.text();
     if (!response.ok) {
       return {
         entry: {
-          id,
-          label,
-          url,
+          ...entryBase,
           status: response.status,
           ok: false,
           errorMessage: extractErrorMessage(
@@ -73,35 +90,31 @@ async function fetchTotpRequest(
             response.status,
             response.statusText
           ),
-          timestamp,
         },
       };
     }
     try {
-      const data = JSON.parse(bodyText) as { otp: string; remaining: number };
+      const data = JSON.parse(bodyText) as {
+        otps: BatchOtpEntry[];
+        remaining: number;
+      };
       return {
         entry: {
-          id,
-          label,
-          url,
+          ...entryBase,
           status: response.status,
           ok: true,
           errorMessage: null,
-          timestamp,
         },
-        otp: data.otp,
+        otps: data.otps,
         remaining: data.remaining,
       };
     } catch {
       return {
         entry: {
-          id,
-          label,
-          url,
+          ...entryBase,
           status: response.status,
           ok: false,
           errorMessage: bodyText || 'Invalid JSON response from server.',
-          timestamp,
         },
       };
     }
@@ -110,14 +123,11 @@ async function fetchTotpRequest(
       return null;
     return {
       entry: {
-        id,
-        label,
-        url,
+        ...entryBase,
         status: 0,
         ok: false,
         errorMessage:
           error instanceof Error ? error.message : 'Network request failed.',
-        timestamp,
       },
     };
   }
@@ -158,47 +168,48 @@ function App() {
     abortControllerRef.current = controller;
     const { signal } = controller;
 
-    const base = `/generate-totp?key=${encodeURIComponent(key)}&digits=${digits}&period=${period}&algorithm=${algorithm}`;
-    const targets: Array<{ id: RequestId; label: string; url: string }> = [
-      { id: 'current', label: 'Current', url: base },
-      {
-        id: 'previous',
-        label: 'Previous (-30s)',
-        url: `${base}&timeOffset=-30`,
-      },
-      { id: 'next', label: 'Next (+30s)', url: `${base}&timeOffset=30` },
-    ];
+    const base = `/generate-totp-batch`;
+    const offsets = [-30, 0, 30];
 
-    const results = await Promise.all(
-      targets.map((t) => fetchTotpRequest(t.id, t.label, t.url, signal))
+    const result = await fetchTotpBatch(
+      'batch',
+      'Previous (-30s), Current, Next (+30s)',
+      base,
+      { key, digits, period, algorithm, offsets },
+      signal
     );
 
-    if (results.some((r) => r === null)) return;
+    if (result === null) return;
 
-    const entries = (results as FetchResult[]).map((r) => r.entry);
-    setRequests(entries);
+    setRequests([result.entry]);
 
-    const [current, prev, next] = results as FetchResult[];
     if (
-      current.entry.ok &&
-      prev.entry.ok &&
-      next.entry.ok &&
-      current.otp !== undefined &&
-      prev.otp !== undefined &&
-      next.otp !== undefined
+      result.entry.ok &&
+      result.otps !== undefined &&
+      result.remaining !== undefined
     ) {
-      setOtp(current.otp);
-      setPrevOtp(prev.otp);
-      setNextOtp(next.otp);
-      if (current.remaining !== undefined) setRemaining(current.remaining);
+      const otpFor = (offset: number) =>
+        result.otps?.find((o) => o.offset === offset)?.otp;
+      const current = otpFor(0);
+      const prev = otpFor(-30);
+      const next = otpFor(30);
+      if (current !== undefined && prev !== undefined && next !== undefined) {
+        setOtp(current);
+        setPrevOtp(prev);
+        setNextOtp(next);
+        setRemaining(result.remaining);
+      } else {
+        console.error(
+          'Error fetching OTP (batch): missing offset in response',
+          result.otps
+        );
+      }
     } else {
-      results.forEach((r) => {
-        if (r && !r.entry.ok)
-          console.error(
-            `Error fetching OTP (${r.entry.id}):`,
-            r.entry.errorMessage
-          );
-      });
+      if (!result.entry.ok)
+        console.error(
+          `Error fetching OTP (${result.entry.id}):`,
+          result.entry.errorMessage
+        );
     }
   }, [key, digits, period, algorithm]);
 
@@ -358,7 +369,7 @@ function App() {
                   <>
                     <span className="flex min-w-0 flex-1 items-center gap-2">
                       <span className="shrink-0 font-mono text-xs font-semibold text-gray-500">
-                        GET
+                        {req.method}
                       </span>
                       <span className="shrink-0 text-sm text-gray-700">
                         {req.label}
