@@ -19,7 +19,7 @@
 		"zod": "^4.6.x"
 	},
 	"devDependencies": {
-		"@types/node": "26.5.x",
+		"@types/node": "26.6.x",
 		"typescript": "^7.0.x",
 		"wrangler": "^4.131.x"
 	}
