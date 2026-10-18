@@ -1,11 +1,30 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot — weekly dependency updates, grouped so one PR covers the
+# toolchain rather than twelve separate ones. @rexezuge/* updates land in
+# their own group, which is the kit's upgrade path: a bump PR per repo, and
+# the repo's own CI is the gate.
 
 version: 2
 updates:
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
+    open-pull-requests-limit: 5
+    labels:
+      - 'dependencies'
+    groups:
+      kit:
+        patterns:
+          - '@rexezuge/*'
+      toolchain:
+        patterns:
+          - 'typescript'
+          - 'vitest'
+          - 'vite'
+          - 'eslint'
+          - 'typescript-eslint'
+          - 'prettier'
+          - 'wrangler'
+      cloudflare:
+        patterns:
+          - '@cloudflare/*'

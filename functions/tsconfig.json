@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // No `types: ["node"]`: this is a Cloudflare Pages Function, so it needs
+    // the generated Workers types (`Fetcher`, `Headers`), which
+    // `worker-configuration.d.ts` supplies at the repo root.
+    "types": [],
+    "lib": ["ES2022", "DOM"]
+  },
+  // This directory is a deployed entrypoint — `apps/web` publishes it to
+  // Cloudflare Pages, and its `service` binding is the one place the two
+  // wrangler templates are coupled — so it is typechecked like every other
+  // source tree rather than being the one directory outside them all.
+  "include": ["**/*.ts", "../worker-configuration.d.ts"]
+}

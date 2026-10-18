@@ -1,0 +1,22 @@
+{
+  "name": "@totp-generator/api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@rexezuge/errors": "1.9.2",
+    "@rexezuge/http": "1.9.2",
+    "@rexezuge/runtime": "1.9.2",
+    "chanfana": "3.4.0",
+    "hono": "4.13.13",
+    "otplib": "13.5.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "typescript": "6.0.3"
+  }
+}

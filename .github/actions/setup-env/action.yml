@@ -1,0 +1,22 @@
+name: Setup Environment
+description: Install pnpm, set up Node.js with pnpm store cache, and install workspace dependencies
+
+runs:
+  using: composite
+  steps:
+    # The version comes from `packageManager` in package.json, so the runner
+    # installs the same pnpm the lockfile was written with.
+    - name: Install pnpm
+      uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: pnpm
+
+    - name: Install Dependencies
+      uses: ./.github/actions/retry-step
+      with:
+        command: pnpm install
+        max_attempts: '3'

@@ -1,3 +1,13 @@
+# Continuous Integration — the gate every change passes before it reaches main.
+#
+# Job boundaries follow the family's converged CI: a failure that only one tool
+# can see gets a job that names that tool. `checks` holds the tree-wide reads
+# (typecheck, lint, formatting, god-files); `unit-tests` and `web-tests` are the
+# two suites — the API under the node pool, the SPA under jsdom — and each keeps
+# its own coverage report; `build` proves the SPA bundles and the worker config
+# deploys as a dry run; `dependabot-auto-merge` is the only writer, and it waits
+# for every gate.
+
 name: Continuous Integration
 
 permissions:
@@ -6,7 +16,7 @@ permissions:
 on:
   repository_dispatch:
     types:
-      - Upstream Sync
+      - Upstream Sync Integration
   pull_request:
   push:
     branches:
@@ -18,6 +28,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Typecheck and lint are separate from the gates that follow, because they need
+  # nothing but a checkout while the gates are read-only consumers of the tree.
   checks:
     name: Checks
     runs-on: ubuntu-latest
@@ -26,24 +38,89 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      # `pnpm run typecheck` is `pnpm -r typecheck` plus the `test/`, `functions/`
+      # and `scripts/` projects, which no package's own `tsc` covers.
+      - name: Run Type Check and Lint
+        run: pnpm run typecheck && pnpm run lint
+
+      # Its own step, and read-only, because the lint step cannot catch this:
+      # `pnpm run lint` is `eslint --fix --quiet`, and `--fix` repairs what it can
+      # while `--quiet` suppresses the rest — so CI exits 0 on a tree Prettier
+      # rejects, the repairs land in the runner's checkout, and they are thrown
+      # away. `prettier --check` is the one command that fails instead of
+      # repairing.
+      - name: Check Formatting
+        run: pnpm run format:check
+
+      # A god file still typechecks, still lints, still tests: only the size
+      # budget sees it. The check is the kit's, run from the installed package
+      # rather than a local copy, so the budget and the layer table stay one
+      # source of truth.
+      - name: Check God-Files
+        uses: ./.github/actions/retry-step
         with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            app/package-lock.json
+          command: pnpm run check:god-files
+          max_attempts: '2'
 
-      - name: Install Backend Dependencies
-        run: npm ci
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
 
-      - name: Install Frontend Dependencies
-        run: npm --prefix app ci
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
 
-      - name: Run Tests and Checks
-        run: npm run checks
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
 
+      - name: Run API Tests with Coverage
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm run test:coverage
+          max_attempts: '2'
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+  # The SPA's own suite, under its own config: the two Vitest configs partition
+  # the tests rather than each running all of them, so a jsdom suite that would
+  # fail under the node pool cannot hide behind a passing one.
+  web-tests:
+    name: Web Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Run SPA Tests with Coverage
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm run test:web:coverage
+          max_attempts: '2'
+
+      - name: Upload SPA Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-spa-report
+          path: coverage-spa/
+          retention-days: 14
+
+  # The build gate: the SPA bundle the worker's assets binding serves, and the
+  # worker itself as Wrangler sees it. A dry run catches what typecheck cannot —
+  # a bundle over the size limit, an asset path the template no longer points at.
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -52,35 +129,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            app/package-lock.json
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
 
-      - name: Install Backend Dependencies
-        run: npm ci
-
-      - name: Install Frontend Dependencies
-        run: npm --prefix app ci
-
-      - name: Build Frontend
-        run: npm run buildApp
+      - name: Build Web App
+        run: pnpm run build
 
       - name: Prepare Wrangler Configuration
-        run: cp wrangler.jsonc.template wrangler.jsonc
+        run: pnpm run prepare-config
 
       - name: Dry Run Worker Build
-        run: npm run deploy:dry-run
+        run: pnpm exec wrangler deploy --dry-run
 
   dependabot-auto-merge:
     if: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.state == 'open' && !github.event.repository.fork }}
     name: Auto-Merge Dependabot PR
     needs:
       - checks
+      - unit-tests
+      - web-tests
       - build
     permissions:
       contents: write
@@ -88,33 +155,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      # Auto-merge only after every gate above is green, which is what makes it
+      # safe: a dependency bump that breaks the suite waits for a human instead
+      # of merging itself.
       - name: Enable Auto-Merge
-        run: gh pr merge --auto --merge "$PR_URL"
+        uses: ./.github/actions/retry-step
+        with:
+          command: gh pr merge --auto --merge "$PR_URL"
+          max_attempts: '5'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
 
   dispatch-upstream-sync-deployment:
-    if: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'Upstream Sync' }}
+    if: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'Upstream Sync Integration' }}
     name: Dispatch Upstream Sync Deployment
     needs:
       - checks
+      - unit-tests
+      - web-tests
       - build
     permissions:
       contents: write
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      # The second half of the upstream-sync contract: a fork's sync runs CI, and
+      # CI — not the sync workflow — is what authorises the deploy.
       - name: Dispatch Deployment
-        uses: actions/github-script@v7
+        uses: ./.github/actions/retry-step
         with:
-          script: |
-            await github.rest.repos.createDispatchEvent({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              event_type: 'Upstream Sync Deployment',
-              client_payload: {
-                branch: context.payload.client_payload?.branch || 'main',
-                sha: context.payload.client_payload?.sha || context.sha,
-              },
-            });
+          command: >
+            printf '{"event_type":"Upstream Sync Deployment","client_payload":{"branch":"%s","sha":"%s"}}\n'
+            "$PAYLOAD_BRANCH" "$PAYLOAD_SHA"
+            | gh api repos/${{ github.repository }}/dispatches --method POST --input -
+          max_attempts: '2'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAYLOAD_BRANCH: ${{ github.event.client_payload.branch || 'main' }}
+          PAYLOAD_SHA: ${{ github.event.client_payload.sha || github.sha }}

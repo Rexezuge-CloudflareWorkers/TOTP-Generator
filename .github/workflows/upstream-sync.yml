@@ -1,22 +1,35 @@
+# Upstream Sync — a fork's scheduled pull from the repository it forked.
+#
+# The contract has two sides and they change in the same commit: this workflow
+# publishes `Upstream Sync Integration`, and continuous-integration.yml listens
+# for it. The event is named `Upstream Sync Integration` rather than
+# `Upstream Sync` precisely so it cannot be confused with the
+# `Upstream Sync Deployment` event the deploy workflow listens for — one sync,
+# two dispatches, and the name is what keeps a reader from wiring the wrong one.
+
 name: Upstream Sync
 
 on:
   schedule:
-    - cron: "0 2 * * 1"
+    # Weekly, Monday 02:00 UTC. Off the hour on purpose: GitHub drops scheduled
+    # workflows that share a minute with high-traffic crons.
+    - cron: '0 2 * * 1'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   sync:
     if: ${{ github.event.repository.fork }}
-    name: Sync latest commits from upstream
+    name: Sync From Upstream
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v6
 
-      - name: Sync upstream changes
+      - name: Sync Changes
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
         with:
@@ -26,13 +39,11 @@ jobs:
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
           test_mode: false
 
-      - name: Trigger CI for synced commits
+      - name: Trigger Continuous Integration
         if: steps.sync.outputs.has_new_commits == 'true'
-        uses: actions/github-script@v7
+        uses: ./.github/actions/retry-step
         with:
-          script: |
-            await github.rest.repos.createDispatchEvent({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              event_type: 'Upstream Sync',
-            });
+          command: gh api repos/${{ github.repository }}/dispatches --method POST -f event_type='Upstream Sync Integration'
+          max_attempts: '2'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

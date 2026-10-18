@@ -1,4 +1,10 @@
-# v5-1779382086
+# Scheduled Version Update — stamp .github/.version twice a month.
+#
+# The stamp is the family's cache-buster: the CD workflow reads it, and the
+# backup workflows use it in branch names. Forked repos skip the schedule
+# (`if: !github.event.repository.fork`) because a fork must not race its
+# upstream's push.
+
 name: Scheduled Version Update
 
 on:
@@ -15,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: true
 
@@ -28,11 +34,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add .github/.version
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-
-          git commit -m "CHORE: version update"
+          git diff --staged --quiet || git commit -m "CHORE: Version Update"
           git push

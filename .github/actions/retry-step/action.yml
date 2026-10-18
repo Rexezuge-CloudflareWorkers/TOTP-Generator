@@ -1,0 +1,55 @@
+name: Retry Step
+description: Retry a bash command on failure
+
+inputs:
+  command:
+    description: The bash command to run
+    required: true
+  max_attempts:
+    description: Maximum number of attempts
+    required: false
+    default: '3'
+  delay:
+    description: Seconds to wait between attempts
+    required: false
+    default: '10'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        attempt=0
+        max="$RETRY_MAX_ATTEMPTS"
+        delay="$RETRY_DELAY"
+        case "$max" in ''|*[!0-9]*)
+          printf '::error title=Retry Step::max_attempts must be a positive integer\n'
+          exit 1
+          ;;
+        esac
+        if [ "$max" -lt 1 ]; then
+          printf '::error title=Retry Step::max_attempts must be a positive integer\n'
+          exit 1
+        fi
+        case "$delay" in ''|*[!0-9]*)
+          printf '::error title=Retry Step::delay must be a non-negative integer\n'
+          exit 1
+          ;;
+        esac
+        while true; do
+          attempt=$(( attempt + 1 ))
+          printf '::notice title=Retry Step::Attempt %d of %d\n' "$attempt" "$max"
+          if eval "$RETRY_COMMAND"; then
+            exit 0
+          fi
+          if [ "$attempt" -ge "$max" ]; then
+            printf '::error title=Retry Step::Command failed after %d attempts\n' "$max"
+            exit 1
+          fi
+          printf '::warning title=Retry Step::Command failed, retrying in %ds...\n' "$delay"
+          sleep "$delay"
+        done
+      env:
+        RETRY_COMMAND: ${{ inputs.command }}
+        RETRY_MAX_ATTEMPTS: ${{ inputs.max_attempts }}
+        RETRY_DELAY: ${{ inputs.delay }}

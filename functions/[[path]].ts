@@ -1,25 +1,9 @@
-interface PagesEnv {
-  API_WORKER: Fetcher;
-}
+import { createPagesProxy } from '@rexezuge/tooling/functions/pages-proxy';
 
-const FORWARDED_HOST_HEADER = 'X-Forwarded-Host';
-const FORWARDED_PROTO_HEADER = 'X-Forwarded-Proto';
-const FORWARDED_URI_HEADER = 'X-Forwarded-Uri';
-
-export const onRequest: PagesFunction<PagesEnv> = async ({ request, env }) => {
-  const originalUrl = new URL(request.url);
-
-  const headers = new Headers(request.headers);
-  headers.set(FORWARDED_HOST_HEADER, originalUrl.host);
-  headers.set(FORWARDED_PROTO_HEADER, originalUrl.protocol.replace(':', ''));
-  headers.set(FORWARDED_URI_HEADER, `${originalUrl.pathname}${originalUrl.search}`);
-
-  const proxyRequest = new Request(originalUrl.toString(), {
-    method: request.method,
-    headers,
-    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
-    redirect: request.redirect,
-  });
-
-  return env.API_WORKER.fetch(proxyRequest);
-};
+/**
+ * Every request Pages cannot answer with a static file — the four API paths in
+ * `public/_routes.json` — goes to the `totp-generator` worker over the
+ * `API_WORKER` service binding. No external HTTP call and no origin
+ * configuration: the binding is resolved by the platform.
+ */
+export const onRequest = createPagesProxy();

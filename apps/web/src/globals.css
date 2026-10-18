@@ -1,0 +1,96 @@
+@import 'tailwindcss';
+
+/*
+ * The family's warm dark palette, ported unchanged from the kit's other SPAs.
+ *
+ * `@rexezuge/web`'s class-based components read these variables directly
+ * (`bg-[var(--color-surface-1)]`, `text-[var(--color-error-text)]`, …), so the
+ * names are a contract, not a theme of this repo's own: renaming one silently
+ * unpaints every component that reads it.
+ */
+@theme {
+  --color-surface-base: #100f0d;
+  --color-surface-1: #1a1814;
+  --color-surface-2: #201e1b;
+  --color-surface-3: #2a2722;
+  --color-surface-4: #332f29;
+  --color-border: #2e2a24;
+  --color-border-muted: #3a3530;
+  --color-text-primary: #f5f0eb;
+  --color-text-secondary: #b0a89a;
+  --color-text-muted: #7a7068;
+
+  /* Semantic status colors */
+  --color-success-bg: #0e2d22;
+  --color-success-text: #6ee7b7;
+  --color-error-bg: #2d1214;
+  --color-error-text: #fca5a5;
+  --color-warning-bg: #2d2007;
+  --color-warning-text: #fbbf24;
+  --color-info-bg: #0e1e3a;
+  --color-info-text: #93c5fd;
+  --color-neutral-bg: #252219;
+  --color-neutral-text: #b0a89a;
+
+  /* Accent */
+  --color-accent: #6ee7b7;
+  --color-accent-dim: #4fd1a0;
+
+  /* Animations — `NoticeBar` animates in with `animate-slide-down`, and
+     `Spinner` (and therefore `Button`'s busy state) with `animate-spin`. */
+  --animate-fade-in: fade-in 0.2s ease-out both;
+  --animate-fade-in-up: fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-down: slide-down 0.2s ease-out both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3530;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4540;
+}
+
+::selection {
+  background: rgba(110, 231, 183, 0.2);
+}

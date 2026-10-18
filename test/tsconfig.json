@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "jsx": "react-jsx",
+    "paths": {
+      "@totp-generator/api": ["../apps/api/src"],
+      "@totp-generator/api/*": ["../apps/api/src/*"]
+    }
+  },
+  "include": ["../worker-configuration.d.ts", "../apps/api/src/types.d.ts", "./**/*.ts", "./**/*.tsx"],
+  "exclude": ["node_modules"]
+}

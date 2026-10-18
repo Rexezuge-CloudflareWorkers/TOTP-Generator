@@ -1,4 +1,45 @@
+packages:
+  - 'apps/*'
+
 allowBuilds:
   esbuild: true
-  sharp: true
   workerd: true
+
+# pnpm 11 reads settings from this file, not `.npmrc`, so a
+# `minimum-release-age` line there would do nothing and pnpm's 24-hour default
+# would apply instead.
+#
+# Set to 0 explicitly. This repo's third-party dependencies are pinned to exact
+# versions in the lockfile, which is the guarantee the cooldown stood in for,
+# and the kit is published by this org from the sibling SDK repo.
+minimumReleaseAge: 0
+
+overrides:
+  # One copy of every kit package, always.
+  #
+  # The kit versions in lockstep, but a publish does not reach the registry
+  # atomically: mid-window, `@rexezuge/tooling@1.9.2` can carry a dependency on
+  # `@rexezuge/d1@1.9.1` while this repo asks for 1.9.2 directly, and pnpm
+  # installs both.
+  #
+  # Two copies of a package that identifies its types with `instanceof` is a
+  # silent correctness bug, not a version warning: a `ServiceError` thrown
+  # inside one copy is not a `ServiceError` as far as the other copy's boundary
+  # is concerned, so every catch that narrows on the taxonomy falls through to a
+  # masked 500.
+  '@rexezuge/d1': 1.9.2
+  '@rexezuge/errors': 1.9.2
+  '@rexezuge/http': 1.9.2
+  '@rexezuge/runtime': 1.9.2
+  '@rexezuge/shared': 1.9.2
+  '@rexezuge/tooling': 1.9.2
+  '@rexezuge/web': 1.9.2
+  # One copy of zod, and for the same reason.
+  #
+  # chanfana types a route's request body through *its own* zod, and
+  # `@asteasolutions/zod-to-openapi` augments that module's `ZodType` interface
+  # with the `openapi` method the request-body type requires. A second zod copy
+  # is a second, un-augmented interface: `z.object(...)` stops being assignable
+  # to `OpenAPIRouteSchema['request']['body']` with "Property 'openapi' is
+  # missing", an error that names neither the duplicate nor the fix.
+  zod: 4.6.5
