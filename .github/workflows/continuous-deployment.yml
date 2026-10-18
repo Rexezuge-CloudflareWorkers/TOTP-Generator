@@ -1,3 +1,16 @@
+# Continuous Deployment — deploy the worker and the Pages front end after CI
+# passes on main.
+#
+# The shape: a `workflow_run` trigger so the deploy runs against the SHA CI
+# actually approved, then the wrangler config materialized from the template —
+# no committed secrets — then a dry run as a gate, then the deploy. The TOTP API
+# owns no D1 database and no secret store, so the two steps the family template
+# carries for those are absent rather than empty.
+#
+# The workspace variables the config step reads (`WRANGLER_JSONC`,
+# `WRANGLER_PATCH_JSON`, `WRANGLER_VARS_PATCH_JSON`) are how a deployment
+# supplies per-environment settings without a second template file.
+
 name: Continuous Deployment
 
 permissions:
@@ -30,48 +43,52 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
         with:
+          # The SHA CI approved, not the tip of main: a push that lands while the
+          # workflow_run is in flight must not be what gets deployed.
           ref: ${{ github.event.workflow_run.head_sha || github.event.client_payload.sha || github.sha }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            app/package-lock.json
-
-      - name: Install Backend Dependencies
-        run: npm ci
-
-      - name: Install Frontend Dependencies
-        run: npm --prefix app ci
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
 
       - name: Prepare Wrangler Configuration
-        run: |
-          if [ -n "${WRANGLER_JSONC}" ]; then
-            printf '%s\n' "${WRANGLER_JSONC}" > wrangler.jsonc
-          else
-            cp wrangler.jsonc.template wrangler.jsonc
-          fi
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm run prepare-config
+          max_attempts: '3'
         env:
           WRANGLER_JSONC: ${{ vars.WRANGLER_JSONC }}
+          WRANGLER_PATCH_JSON: ${{ vars.WRANGLER_PATCH_JSON }}
+          WRANGLER_VARS_PATCH_JSON: ${{ vars.WRANGLER_VARS_PATCH_JSON }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Build Frontend
-        run: npm run buildApp
+      # The worker's assets binding serves `apps/web/dist`, so the SPA build is a
+      # precondition of the deploy, not a convenience.
+      - name: Build Web App
+        run: pnpm run build
 
+      # A gate, not a rehearsal. Separate from the deploy below and deliberately
+      # **not** retried: a dry run that fails is a real defect — a bundle over the
+      # size limit, an asset path the template no longer declares — and retrying
+      # it three times only delays the report while making the log harder to read.
       - name: Dry Run Deploy with Wrangler
-        run: npx wrangler deploy --dry-run
+        run: pnpm exec wrangler deploy --dry-run
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy with Wrangler
-        run: npx wrangler deploy
+        uses: ./.github/actions/retry-step
+        with:
+          command: pnpm exec wrangler deploy
+          max_attempts: '3'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+  # Pages serves `apps/web/dist` as static files; the four API paths in
+  # `public/_routes.json` would resolve to 404s without `functions/[[path]].ts`
+  # proxying them to the worker over the `API_WORKER` service binding.
   deploy-pages:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     name: Deploy Cloudflare Pages
@@ -83,41 +100,26 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.event.client_payload.sha || github.sha }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            app/package-lock.json
-
-      - name: Install Backend Dependencies
-        run: npm ci
-      - name: Install Frontend Dependencies
-        run: npm --prefix app ci
-
-      - name: Prepare Wrangler Pages Configuration
-        run: |
-          if [ -n "${WRANGLER_PAGES_JSONC}" ]; then
-            printf '%s\n' "${WRANGLER_PAGES_JSONC}" > wrangler.pages.jsonc
-          else
-            cp wrangler.pages.jsonc.template wrangler.pages.jsonc
-          fi
-        env:
-          WRANGLER_PAGES_JSONC: ${{ vars.WRANGLER_PAGES_JSONC }}
-
-      - name: Stage Pages Config as Default Wrangler Config
-        run: cp wrangler.pages.jsonc wrangler.jsonc
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
 
       - name: Build Frontend
-        run: npm run buildApp
+        run: pnpm run build
 
+      - name: Configure Pages Service Bindings
+        run: cp apps/web/wrangler.template.jsonc wrangler.jsonc
+
+      # Created if absent, and then polled until it is visible, because a project
+      # that exists but is not yet listed makes the deploy below fail with an
+      # error that names the deploy rather than the propagation delay.
       - name: Ensure Pages Project Exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME || 'totp-generator-app' }}
+          DEPLOY_BRANCH: ${{ github.event.workflow_run.head_branch || github.event.client_payload.branch || github.ref_name }}
         run: |
-          PROJECT="${CLOUDFLARE_PAGES_PROJECT_NAME:-totp-generator-app}"
-          echo "Ensuring Pages project \"${PROJECT}\" exists..."
-          if CREATE_OUTPUT="$(npx wrangler pages project create "${PROJECT}" --production-branch "${DEPLOY_BRANCH:-main}" 2>&1)"; then
+          if CREATE_OUTPUT="$(pnpm exec wrangler pages project create "${PROJECT}" --production-branch "${DEPLOY_BRANCH}" 2>&1)"; then
             echo "Created Pages project \"${PROJECT}\"."
           elif echo "${CREATE_OUTPUT}" | grep -qi "already exists"; then
             echo "Pages project \"${PROJECT}\" already exists."
@@ -126,36 +128,29 @@ jobs:
             echo "Failed to create Pages project \"${PROJECT}\"." >&2
             exit 1
           fi
-          echo "Waiting for Pages project \"${PROJECT}\" to become visible..."
-          VISIBLE=0
           for _ in $(seq 1 18); do
-            if npx wrangler pages project list 2>/dev/null | grep -qE "(^|[[:space:]])${PROJECT}([[:space:]]|$)"; then
-              VISIBLE=1
-              break
+            if pnpm exec wrangler pages project list 2>/dev/null | grep -qE "(^|[[:space:]])${PROJECT}([[:space:]]|$)"; then
+              echo "Pages project \"${PROJECT}\" is ready."
+              exit 0
             fi
             sleep 5
           done
-          if [ "${VISIBLE}" -ne 1 ]; then
-            echo "Pages project \"${PROJECT}\" is still not visible after polling." >&2
-            exit 1
-          fi
-          echo "Pages project \"${PROJECT}\" is ready."
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME || 'totp-generator-app' }}
-          DEPLOY_BRANCH: ${{ github.event.workflow_run.head_branch || github.event.client_payload.branch || github.ref_name }}
+          echo "Pages project \"${PROJECT}\" is still not visible after polling." >&2
+          exit 1
 
       - name: Deploy with Wrangler Pages
-        run: |
-          npx wrangler pages deploy app/dist \
-            --project-name "${CLOUDFLARE_PAGES_PROJECT_NAME:-totp-generator-app}" \
-            --branch "${DEPLOY_BRANCH}" \
-            --commit-hash "${DEPLOY_SHA}" \
+        uses: ./.github/actions/retry-step
+        with:
+          command: >
+            pnpm exec wrangler pages deploy apps/web/dist
+            --project-name "${PROJECT}"
+            --branch "${DEPLOY_BRANCH}"
+            --commit-hash "${DEPLOY_SHA}"
             --commit-message "$(git log -1 --pretty=%s)"
+          max_attempts: '3'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME || 'totp-generator-app' }}
+          PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME || 'totp-generator-app' }}
           DEPLOY_BRANCH: ${{ github.event.workflow_run.head_branch || github.event.client_payload.branch || github.ref_name }}
           DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.event.client_payload.sha || github.sha }}

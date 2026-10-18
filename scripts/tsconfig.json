@@ -1,0 +1,21 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // ESNext rather than the repo default ES2022: the lint rules here expect
+    // `Array#toSorted` and the iterator helpers, and against an older lib those
+    // resolve to `any` rather than failing cleanly, which silently turns
+    // type-aware rules into noise.
+    "lib": ["ESNext", "DOM"],
+    "noUncheckedIndexedAccess": true,
+    // These scripts run under `tsx`, which resolves an explicit `.ts` specifier,
+    // and they import `@rexezuge/tooling`'s shipped `src/` — written that way on
+    // purpose, because a script that resolves paths relative to the repository
+    // it runs in is run from disk rather than bundled. The flag is what lets a
+    // `noEmit` config typecheck that form.
+    "allowImportingTsExtensions": true
+  },
+  "include": ["**/*.ts"],
+  // `functions/` is a Cloudflare Pages entrypoint, so it needs the generated
+  // Workers types rather than Node's, and is checked by its own tsconfig.
+  "exclude": ["../functions/**/*"]
+}
