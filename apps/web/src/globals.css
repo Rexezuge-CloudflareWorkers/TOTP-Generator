@@ -1,6 +1,25 @@
 @import 'tailwindcss';
 
 /*
+ * The kit's components are class-based, and Tailwind never looks inside
+ * `node_modules` — so without this line the build compiles none of them.
+ *
+ * `@rexezuge/web`'s `Card`, `Button`, `Input` and `Badge` carry their Tailwind
+ * classes in the package's own `dist/*.js`. Tailwind's automatic source
+ * detection skips `node_modules`, so those class names are never seen as
+ * candidates: the build succeeds, this repo's own classes still work, and every
+ * kit component renders unstyled — no card background, no border, no radius, no
+ * padding. The failure is silent, which is why
+ * `scripts/verify-tailwind-kit.ts` checks the built CSS for the kit's utilities
+ * instead of trusting the build to have noticed.
+ *
+ * The path is relative to this file and resolves through the package's own
+ * `node_modules` entry — the one pnpm creates for a declared dependency —
+ * rather than the workspace root's, which does not hold it.
+ */
+@source '../node_modules/@rexezuge/web/dist';
+
+/*
  * The family's warm dark palette, ported unchanged from the kit's other SPAs.
  *
  * `@rexezuge/web`'s class-based components read these variables directly

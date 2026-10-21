@@ -5,8 +5,9 @@
   "packageManager": "pnpm@11.2.2",
   "scripts": {
     "postinstall": "pnpm run typegen",
-    "build": "pnpm --filter @totp-generator/web build",
+    "build": "pnpm --filter @totp-generator/web build && pnpm run verify:tailwind",
     "predeploy": "pnpm run build",
+    "verify:tailwind": "tsx scripts/verify-tailwind-kit.ts",
     "checks": "pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run check:god-files && pnpm run test:coverage && pnpm run test:web:coverage",
     "prettier": "prettier --write .",
     "format:check": "prettier --check .",

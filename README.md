@@ -94,6 +94,18 @@ These behaviours changed with the layout refactor and the `@rexezuge/*` SDK adop
 - `functions/[[path]].ts` — the Pages Function proxying `/generate-totp`, `/generate-totp-batch`, `/docs` and `/openapi.json` to the worker
 - `test/` — both suites: `test/api` and `test/web`
 - `scripts/prepare-wrangler-config.ts` — materialises `wrangler.jsonc` from its template
+- `scripts/verify-tailwind-kit.ts` — asserts the kit's Tailwind classes reached the built CSS
+
+### Styling
+
+`@rexezuge/web`'s components are class-based: their Tailwind classes live in the package's own `dist/*.js`. Tailwind's automatic source detection skips `node_modules`, so those classes are only compiled when the stylesheet says where to look:
+
+```css
+/* apps/web/src/globals.css */
+@source '../node_modules/@rexezuge/web/dist';
+```
+
+Without that line the build still succeeds and this repo's own classes still apply — the kit's components simply render unstyled. `pnpm run build` therefore runs `scripts/verify-tailwind-kit.ts` afterwards, which fails the build when the kit's utilities are absent from the emitted CSS.
 
 ## Development
 
@@ -103,7 +115,8 @@ pnpm run dev              # worker dev server on :8787; the Vite dev server prox
 pnpm run checks           # typecheck, lint, format:check, god-files, both suites with coverage
 pnpm run test:coverage    # API suite
 pnpm run test:web:coverage # SPA suite
-pnpm run build            # SPA → apps/web/dist
+pnpm run build            # SPA → apps/web/dist, then the Tailwind kit check
+pnpm run verify:tailwind  # asserts the kit's classes reached the built CSS
 ```
 
 ## Deployment
