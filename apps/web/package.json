@@ -10,7 +10,7 @@
   "dependencies": {
     "@rexezuge/errors": "1.9.2",
     "@rexezuge/web": "1.9.2",
-    "lucide-react": "1.60.0",
+    "lucide-react": "1.62.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
