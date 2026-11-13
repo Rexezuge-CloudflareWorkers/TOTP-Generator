@@ -7,9 +7,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@rexezuge/errors": "1.9.2",
-    "@rexezuge/http": "1.9.2",
-    "@rexezuge/runtime": "1.9.2",
+    "@rexezuge/errors": "1.9.4",
+    "@rexezuge/http": "1.9.4",
+    "@rexezuge/runtime": "1.9.4",
     "chanfana": "3.4.2",
     "hono": "4.13.16",
     "otplib": "13.6.0",
