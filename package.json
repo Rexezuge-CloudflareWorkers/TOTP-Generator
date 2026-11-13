@@ -28,12 +28,12 @@
     "deploy": "pnpm run prepare-config && wrangler deploy"
   },
   "devDependencies": {
-    "@rexezuge/errors": "1.9.2",
-    "@rexezuge/http": "1.9.2",
-    "@rexezuge/runtime": "1.9.2",
-    "@rexezuge/shared": "1.9.2",
-    "@rexezuge/tooling": "1.9.2",
-    "@rexezuge/web": "1.9.2",
+    "@rexezuge/errors": "1.9.4",
+    "@rexezuge/http": "1.9.4",
+    "@rexezuge/runtime": "1.9.4",
+    "@rexezuge/shared": "1.9.4",
+    "@rexezuge/tooling": "1.9.4",
+    "@rexezuge/web": "1.9.4",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@types/node": "26.6.6",
